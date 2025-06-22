@@ -312,7 +312,7 @@ def adaptive_grad_clip(
     """Clips updates to be at most ``clipping * parameter_norm``, unit-wise.
 
     Args:
-      clipping: The maximum allowed ratio of update norm to parameter norm.
+      clipping: The max allowed ratio of update norm to parameter norm.
       eps: An epsilon term to prevent clipping of zero-initialized params.
       axis: Axis or axes along which to compute the unit-wise norm. If None, uses
         default behavior based on input dimensions. This is useful for custom
