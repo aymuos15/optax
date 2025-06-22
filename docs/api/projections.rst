@@ -40,6 +40,10 @@ Available projections
     projection_linf_ball
     projection_non_negative
     projection_simplex
+    projection_transport
+    kl_projection_transport
+    projection_birkhoff
+    kl_projection_birkhoff
 
 Projection onto a box
 ~~~~~~~~~~~~~~~~~~~~~
@@ -76,3 +80,19 @@ Projection onto the non-negative orthant
 Projection onto a simplex
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: projection_simplex
+
+Projection onto the transportation polytope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: projection_transport
+
+Kullback-Leibler projection onto the transportation polytope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: kl_projection_transport
+
+Projection onto the Birkhoff polytope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: projection_birkhoff
+
+Kullback-Leibler projection onto the Birkhoff polytope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: kl_projection_birkhoff

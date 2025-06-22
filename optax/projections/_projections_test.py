@@ -239,6 +239,135 @@ class ProjectionsTest(parameterized.TestCase):
     assert not jnp.isnan(grad)
     assert grad == 1.0
 
+  def test_transport_projection_error_handling(self):
+    """Test that transport projections raise appropriate errors without solver."""
+    sim_matrix = jnp.array([[1.0, 0.5], [0.5, 1.0]])
+    marginals_a = jnp.array([0.5, 0.5])
+    marginals_b = jnp.array([0.5, 0.5])
 
-if __name__ == '__main__':
-  absltest.main()
+    with self.assertRaises(NotImplementedError):
+      proj.projection_transport(sim_matrix, (marginals_a, marginals_b))
+
+    with self.assertRaises(NotImplementedError):
+      proj.kl_projection_transport(sim_matrix, (marginals_a, marginals_b))
+
+    with self.assertRaises(NotImplementedError):
+      proj.projection_birkhoff(sim_matrix)
+
+    with self.assertRaises(NotImplementedError):
+      proj.kl_projection_birkhoff(sim_matrix)
+
+  def test_transport_projection_shape_validation(self):
+    """Test input shape validation for transport projections."""
+    sim_matrix = jnp.array([[1.0, 0.5], [0.5, 1.0]])
+
+    # Test with wrong marginal shapes
+    marginals_a_2d = jnp.array([[0.5, 0.5]])  # 2D instead of 1D
+    marginals_b = jnp.array([0.5, 0.5])
+
+    with self.assertRaises(ValueError):
+      proj.projection_transport(
+          sim_matrix,
+          (marginals_a_2d, marginals_b),
+          make_solver=self._mock_solver
+      )
+
+    # Test with size mismatch
+    marginals_a = jnp.array([0.5, 0.5])
+    marginals_b_wrong = jnp.array([0.5])  # Wrong size
+
+    with self.assertRaises(ValueError):
+      proj.projection_transport(
+          sim_matrix,
+          (marginals_a, marginals_b_wrong),
+          make_solver=self._mock_solver
+      )
+
+  def _mock_solver(self, objective_fn):
+    """A simple mock solver for testing."""
+    class MockSolver:
+      def __init__(self, fun):
+        self.fun = fun
+
+      def run(self, init_params, **kwargs):
+        class Result:
+          def __init__(self, params):
+            self.params = params
+        return Result(init_params)
+
+    return MockSolver(objective_fn)
+
+  def test_transport_projection_basic_functionality(self):
+    """Test basic functionality of transport projections with mock solver."""
+    # Create a simple 2x2 similarity matrix
+    sim_matrix = jnp.array([[0.8, 0.2], [0.3, 0.7]])
+    marginals_a = jnp.array([0.6, 0.4])
+    marginals_b = jnp.array([0.5, 0.5])
+
+    # Test projection_transport
+    result = proj.projection_transport(
+        sim_matrix,
+        (marginals_a, marginals_b),
+        make_solver=self._mock_solver
+    )
+    self.assertEqual(result.shape, (2, 2))
+
+    # Test kl_projection_transport
+    result_kl = proj.kl_projection_transport(
+        sim_matrix,
+        (marginals_a, marginals_b),
+        make_solver=self._mock_solver
+    )
+    self.assertEqual(result_kl.shape, (2, 2))
+
+  def test_birkhoff_projection_basic_functionality(self):
+    """Test basic functionality of Birkhoff projections with mock solver."""
+    # Square similarity matrix
+    square_sim = jnp.array([[0.8, 0.2], [0.3, 0.7]])
+
+    # Test projection_birkhoff
+    result_birkhoff = proj.projection_birkhoff(
+        square_sim,
+        make_solver=self._mock_solver
+    )
+    self.assertEqual(result_birkhoff.shape, (2, 2))
+
+    # Test kl_projection_birkhoff
+    result_kl_birkhoff = proj.kl_projection_birkhoff(
+        square_sim,
+        make_solver=self._mock_solver
+    )
+    self.assertEqual(result_kl_birkhoff.shape, (2, 2))
+
+  def test_transport_projection_dual_formulations(self):
+    """Test both semi-dual and dual formulations."""
+    sim_matrix = jnp.array([[0.8, 0.2], [0.3, 0.7]])
+    marginals_a = jnp.array([0.6, 0.4])
+    marginals_b = jnp.array([0.5, 0.5])
+
+    # Test semi-dual (default)
+    result_semi = proj.projection_transport(
+        sim_matrix,
+        (marginals_a, marginals_b),
+        make_solver=self._mock_solver,
+        use_semi_dual=True
+    )
+
+    # Test dual formulation
+    result_dual = proj.projection_transport(
+        sim_matrix,
+        (marginals_a, marginals_b),
+        make_solver=self._mock_solver,
+        use_semi_dual=False
+    )
+
+    # Both should return valid shapes
+    self.assertEqual(result_semi.shape, (2, 2))
+    self.assertEqual(result_dual.shape, (2, 2))
+
+
+def tree_allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
+  # Replace this with optax.tree.allclose, once that's added.
+  return all(jax.tree.leaves(jax.tree.map(
+    lambda a, b: jnp.allclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
+  , a, b)))

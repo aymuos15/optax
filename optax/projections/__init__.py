@@ -26,3 +26,7 @@ from optax.projections._projections import projection_l2_sphere
 from optax.projections._projections import projection_linf_ball
 from optax.projections._projections import projection_non_negative
 from optax.projections._projections import projection_simplex
+from optax.projections._projections import projection_transport
+from optax.projections._projections import kl_projection_transport
+from optax.projections._projections import projection_birkhoff
+from optax.projections._projections import kl_projection_birkhoff
