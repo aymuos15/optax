@@ -62,14 +62,14 @@ def scale_by_acprop(
   def update_fn(updates, state, params=None):
     del params
     mu = optax.tree.update_moment(updates, state.mu, b1, 1)
-    prediction_error = jax.tree.map(lambda g, m: g - m, updates, state.mu)
+    prediction_error = jax.tree.map(lambda g, m: g - m, updates, mu)
     nu = optax.tree.update_moment_per_elem_norm(prediction_error, state.nu, b2,
                                                 2)
     nu = jax.tree.map(lambda v: v + eps_root, nu)
     count_inc = numerics.safe_increment(state.count)
 
-    # On initial step, avoid division by zero and force nu_hat to be 1.
-    initial = state.count == 0
+    # On initial steps, avoid division by zero and force nu_hat to be 1.
+    initial = state.count <= 1
     t = jnp.where(initial, count_inc, state.count)
     nu_hat = optax.tree.bias_correction(state.nu, b2, t)
     nu_hat = jax.tree.map(lambda x: jnp.where(initial, 1, x), nu_hat)
